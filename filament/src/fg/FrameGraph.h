@@ -190,10 +190,19 @@ private:
 
     details::LinearAllocatorArena mArena;
 
-    Vector<fg::PassNode> mPassNodes;           // list of frame graph passes
-    Vector<fg::ResourceNode> mResourceNodes;
+    template <typename T>
+    struct Deleter {
+        FrameGraph& fg;
+        Deleter(FrameGraph& fg) noexcept : fg(fg) {} // NOLINT(google-explicit-constructor)
+        void operator()(T* object) noexcept { fg.mArena.destroy(object); }
+    };
+    template <typename T>
+    using UniquePtr = std::unique_ptr<T, Deleter<T>>;
+
+    Vector<fg::PassNode> mPassNodes;                    // list of frame graph passes
+    Vector<fg::ResourceNode> mResourceNodes;            // list of resource nodes
+    Vector<UniquePtr<fg::Resource>> mResourceRegistry;  // list actual resources
     Vector<fg::RenderTarget> mRenderTargets;
-    Vector<fg::Resource> mResourceRegistry;    // frame graph concrete resources
     Vector<fg::Alias> mAliases;
 };
 
